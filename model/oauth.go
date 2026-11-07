@@ -115,6 +115,7 @@ type OidcUser struct {
 	VerifiedEmail     bool   `json:"email_verified"`
 	PreferredUsername string `json:"preferred_username"`
 	Picture           string `json:"picture"`
+	Hd                string `json:"hd"`
 }
 
 func (ou *OidcUser) ToOauthUser() *OauthUser {

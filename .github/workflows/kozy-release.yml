@@ -1,0 +1,35 @@
+# KozyOps build: a static linux/amd64 apimain, released as a GitHub release
+# asset. The RustDesk box (KozyOps/infrastructure-aws terraform/prod/
+# rustdesk-api.tf) runs it in place of /app/apimain inside the upstream
+# lejianwen/rustdesk-api image of the same version, pinned by sha256.
+#
+# Release: push a tag named kozy-<upstream version>.<n>, e.g. kozy-v2.7.1.
+name: kozy-release
+
+on:
+  push:
+    tags: ["kozy-*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container: golang:1.23-alpine
+    steps:
+      - run: apk add --no-cache build-base git github-cli
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - name: Build
+        run: |
+          git config --global --add safe.directory "$PWD"
+          go mod tidy
+          go test ./service/ -run Kozy
+          CGO_ENABLED=1 go build -ldflags '-s -w -linkmode external -extldflags "-static"' -o apimain-linux-amd64 ./cmd/apimain.go
+          sha256sum apimain-linux-amd64 | tee apimain-linux-amd64.sha256
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" apimain-linux-amd64 apimain-linux-amd64.sha256 -R "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes "KozyOps build of lejianwen/rustdesk-api. See service/kozy.go."

@@ -123,6 +123,7 @@ func (os *OauthService) BeginAuth(op string) (error error, state, verifier, nonc
 			}
 		}
 
+		state = kozyState(state)
 		return err, state, verifier, nonce, oauthConfig.AuthCodeURL(state, extras...)
 	}
 
@@ -178,7 +179,7 @@ func (os *OauthService) GetOauthConfig(op string) (err error, oauthInfo *model.O
 	oauthConfig = &oauth2.Config{
 		ClientID:     oauthInfo.ClientId,
 		ClientSecret: oauthInfo.ClientSecret,
-		RedirectURL:  Config.Rustdesk.ApiServer + "/api/oidc/callback",
+		RedirectURL:  kozyRedirectURL(Config.Rustdesk.ApiServer + "/api/oidc/callback"),
 	}
 
 	// Maybe should validate the oauthConfig here
@@ -327,6 +328,9 @@ func (os *OauthService) linuxdoCallback(oauthConfig *oauth2.Config, provider *oi
 func (os *OauthService) oidcCallback(oauthConfig *oauth2.Config, provider *oidc.Provider, code, verifier, nonce string) (error, *model.OauthUser) {
 	var user = &model.OidcUser{}
 	if err, _ := os.callbackBase(oauthConfig, provider, code, verifier, nonce, user); err != nil {
+		return err, nil
+	}
+	if err := kozyCheckDomain(user); err != nil {
 		return err, nil
 	}
 	return nil, user.ToOauthUser()

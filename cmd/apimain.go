@@ -211,6 +211,7 @@ func InitGlobal() {
 	})
 	global.LoginLimiter.RegisterProvider(utils.B64StringCaptchaProvider{})
 	DatabaseAutoUpdate()
+	service.KozyBootstrap()
 }
 
 func DatabaseAutoUpdate() {

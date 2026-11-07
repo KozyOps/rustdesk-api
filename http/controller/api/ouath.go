@@ -240,6 +240,7 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 				return
 			}
 		}
+		service.KozyPromoteAdmin(user)
 		oauthCache.UserId = user.Id
 		oauthService.SetOauthCache(cacheKey, oauthCache, 0)
 		// 如果是webadmin，登录成功后跳转到webadmin
